@@ -7983,7 +7983,7 @@ function renderCase() {
     </section>
     <section class="stack">
       <h2>${L("Work the case", "Estudar o caso")}</h2>
-      <p class="muted small">${L("Ask only what you need. Getting the diagnosis with fewer findings earns a sharp-eye bonus.", "Peça só o que precisa. Acertar no diagnóstico com menos achados dá um bónus de olho clínico.")}</p>
+      <p class="muted small">${L("History and examination are free. Order only the tests you need: getting the diagnosis with fewer tests earns a sharp-eye bonus.", "A história e o exame objetivo são livres. Peça só os exames de que precisa: acertar no diagnóstico com menos exames dá um bónus de olho clínico.")}</p>
       <div class="areas">${areaBtns}</div>
     </section>
     <section class="card stack">
@@ -8073,9 +8073,11 @@ function scoreCase() {
   const c = C();
   const keys = []; if (c.areas) AREAS.forEach(([k]) => (c.areas[k] || []).forEach((it, i) => { if (it.tag === "key") keys.push(k + ":" + i); }));
   const foundKeys = keys.filter(k => run.revealed.includes(k)).length;
-  const extras = run.revealed.filter(r => { const [a, i] = r.split(":"); return c.areas[a][+i].tag === "unneeded"; }).length;
+  // History and examination are free, as at the bedside: only tests (labs, imaging, pathology) count.
+  const isTest = r => !/^(history|exam):/.test(r);
+  const extras = run.revealed.filter(r => { const [a, i] = r.split(":"); return isTest(r) && c.areas[a][+i].tag === "unneeded"; }).length;
   const dxRight = !!(run.results[0] && run.results[0].correct);
-  const atDx = run.atDx == null ? run.revealed.length : run.atDx;
+  const atDx = run.revealed.slice(0, run.atDx == null ? run.revealed.length : run.atDx).filter(isTest).length;
   let pts = 0;
   c.questions.forEach((q, i) => {
     const r = run.results[i];
@@ -8087,7 +8089,7 @@ function scoreCase() {
   // plus a sharp-eye bonus that shrinks with every finding revealed before diagnosing.
   const keyPts = dxRight ? 20 : Math.round(20 * foundKeys / keys.length);
   const workup = keyPts + Math.max(0, 10 - 3 * extras);
-  const sharp = dxRight ? Math.max(0, 20 - 2 * atDx) : 0;
+  const sharp = dxRight ? Math.max(0, 20 - 3 * atDx) : 0;
   pts += workup + sharp;
   return { keys, foundKeys, extras, workup, sharp, atDx, dxRight, pts };
 }
@@ -8119,7 +8121,7 @@ function renderDebrief() {
       <div class="score"><b>${sc.pts}</b><span class="muted">${L("points", "pontos")}</span></div>
       <div class="checks">${checks}
         ${isImg ? "" : `<div class="check"><span class="mark ${sc.foundKeys === sc.keys.length ? "ok" : "mid"}">${sc.foundKeys}</span><span>${L(`of ${sc.keys.length} key findings found`, `de ${sc.keys.length} achados essenciais encontrados`)}${sc.extras ? L(` · ${sc.extras} test${sc.extras > 1 ? "s" : ""} you could skip next time`, ` · ${sc.extras} exame${sc.extras > 1 ? "s" : ""} a dispensar da próxima vez`) : L(" · nothing wasted", " · nada desperdiçado")}</span></div>
-        <div class="check"><span class="mark ${sc.sharp ? "ok" : "mid"}">${sc.sharp ? "+" + sc.sharp : "·"}</span><span>${sc.dxRight ? L(`Sharp eye: diagnosed after ${sc.atDx} finding${sc.atDx === 1 ? "" : "s"}${sc.sharp ? "" : ". Fewer findings next time earn a bonus."}`, `Olho clínico: diagnóstico após ${sc.atDx} achado${sc.atDx === 1 ? "" : "s"}${sc.sharp ? "" : ". Com menos achados da próxima vez ganha um bónus."}`) : L("Sharp-eye bonus comes with the right diagnosis.", "O bónus de olho clínico vem com o diagnóstico certo.")}</span></div>`}
+        <div class="check"><span class="mark ${sc.sharp ? "ok" : "mid"}">${sc.sharp ? "+" + sc.sharp : "·"}</span><span>${sc.dxRight ? L(`Sharp eye: diagnosed after ${sc.atDx} test${sc.atDx === 1 ? "" : "s"}${sc.sharp ? "" : ". Fewer tests next time earn a bonus."}`, `Olho clínico: diagnóstico após ${sc.atDx} exame${sc.atDx === 1 ? "" : "s"}${sc.sharp ? "" : ". Com menos exames da próxima vez ganha um bónus."}`) : L("Sharp-eye bonus comes with the right diagnosis.", "O bónus de olho clínico vem com o diagnóstico certo.")}</span></div>`}
       </div>
     </section>
     ${isImg ? `<section class="card stack">${imageHTML(c, true)}</section>` : `<section class="paths">
