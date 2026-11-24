@@ -500,6 +500,41 @@ h1 { font-size: 27px; }
 .cl-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .cl-row .link { min-height: 44px; }
 .btn[disabled] { opacity: .6; }
+/* ---------- Onboarding (one-time) ---------- */
+.ob { min-height: 100dvh; display: flex; flex-direction: column; gap: 14px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+.ob-top { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.ob-dots { display: flex; gap: 8px; }
+.ob-dots i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.ob-dots i.on { background: var(--haem); width: 26px; border-radius: 5px; }
+.ob-skip { background: none; border: 0; color: var(--muted); font-weight: 700; font-size: 16px; min-height: 44px; padding: 0 4px; }
+.ob-body { flex: 1; gap: 12px; }
+.ob-body h1 { margin: 0; }
+.ob-hero { display: flex; justify-content: center; margin: 4px 0 6px; }
+.ob-hero .face { width: 132px; height: 132px; }
+.ob-lead { font-size: 18px; line-height: 1.45; margin: 0; }
+.ob-note { font-size: 15px; margin: 0; }
+.ob-group { gap: 8px; margin-top: 6px; }
+.ob-row { display: flex; gap: 10px; }
+.ob-row > .btn { flex: 1; padding-inline: 8px; }
+.ob-lang img, .ob-lang svg { vertical-align: -3px; margin-left: 6px; }
+.ob-card { border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; }
+.ob-card h2 { margin: 0; font-size: 24px; }
+.ob-card p { margin: 2px 0 0; font-size: 16px; line-height: 1.4; }
+.ob-quick { background: var(--haem); color: #fff; }
+.ob-quick .eyebrow { color: rgba(255, 255, 255, .78); }
+.ob-patient { background: var(--clinic-soft); border: 1.5px solid var(--clinic-line); }
+.ob-patient .eyebrow { color: var(--clinic); }
+.ob-picks { margin-top: 4px; }
+.ob-pick { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 10px; border-radius: 18px; background: var(--card); border: 2px solid var(--line); color: var(--ink); font-size: 17px; }
+.ob-pick.on { border-color: var(--haem); box-shadow: 0 0 0 3px var(--haem-soft); }
+.ob-pick .face { width: 96px; height: 96px; }
+.ob-skins { display: flex; gap: 10px; flex-wrap: wrap; }
+.ob-skin { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, .12); position: relative; padding: 0; }
+.ob-skin::after { content: ""; position: absolute; inset: -4px; }
+.ob-skin.on { box-shadow: 0 0 0 3px var(--card), 0 0 0 5.5px var(--haem); }
+.ob-foot { display: flex; gap: 10px; position: sticky; bottom: calc(12px + env(safe-area-inset-bottom)); }
+.ob-foot .btn { flex: 1; }
+.ob-foot .btn-ghost { flex: 0 0 auto; min-width: 110px; color: var(--ink); background: var(--bg); }
 </style>
 
 <div id="app"></div>
@@ -6958,11 +6993,73 @@ function zoomHTML() {
 
 function go(v) { view = v; sheet = null; flagOpen = null; zoom = null; render(); window.scrollTo(0, 0); }
 
+/* ==========================================================================
+   ONBOARDING: three short screens, shown once to a new player.
+   1 Welcome + language, 2 the two ways to practise, 3 pick your doctor.
+   Never shown to someone who already has progress. S.onboarded = 1 when done.
+   ========================================================================== */
+let obStep = 0;
+const onboardOn = () => !S.onboarded && !(S.history || []).length && !Object.keys(S.done || {}).length;
+function onboardHTML() {
+  const dots = `<div class="ob-dots" aria-hidden="true">${[0, 1, 2].map(i => `<i class="${i === obStep ? "on" : ""}"></i>`).join("")}</div>`;
+  const skip = obStep < 2 ? `<button class="ob-skip" data-act="ob-done">${L("Skip", "Saltar")}</button>` : "";
+  const back = obStep > 0 ? `<button class="btn btn-ghost" data-act="ob-back">${L("Back", "Voltar")}</button>` : "";
+  const next = obStep < 2
+    ? `<button class="btn btn-primary" data-act="ob-next">${L("Next", "Seguinte")}</button>`
+    : `<button class="btn btn-primary" data-act="ob-done">${L("Start practising", "Começar a praticar")}</button>`;
+  let body = "";
+  if (obStep === 0) {
+    const lang = (v, label, on) => `<button class="btn ${on ? "btn-primary" : "btn-soft"} ob-lang" data-act="lang" data-lang="${v}" aria-pressed="${on}">${label}</button>`;
+    body = `<div class="ob-hero">${doctorFace(doctor(), 132)}</div>
+      <span class="eyebrow">${L("The Daily Clinic", "A Consulta Diária")}</span>
+      <h1>${L("Welcome, Doctor.", doctor().f ? "Bem-vinda, Doutora." : "Bem-vindo, Doutor.")}</h1>
+      <p class="ob-lead">${L("A few minutes a day to keep your clinical memory sharp: drug names, diseases and real patients.", "Alguns minutos por dia para manter a memória clínica em forma: nomes de fármacos, doenças e doentes reais.")}</p>
+      <div class="stack ob-group"><span class="eyebrow">${L("Language", "Idioma")}</span>
+        <div class="ob-row">${lang("en", "English" + FLAG_UK, S.lang !== "pt")}${lang("pt", "Português" + FLAG_PT, S.lang === "pt")}</div></div>`;
+  } else if (obStep === 1) {
+    body = `<h1>${L("Two ways to practise", "Duas formas de praticar")}</h1>
+      <div class="ob-card ob-quick">
+        <span class="eyebrow">${L("A few minutes", "Poucos minutos")}</span>
+        <h2>${L("Quick round", "Ronda rápida")}</h2>
+        <p>${L("10 names and facts. Most are multiple choice; some you type from memory. A clue is there if a name won’t come.", "10 nomes e factos. A maioria é de escolha múltipla; alguns escreve de memória. Há uma pista se o nome não vier.")}</p>
+      </div>
+      <div class="ob-card ob-patient">
+        <span class="eyebrow">${L("About 10 minutes", "Cerca de 10 minutos")}</span>
+        <h2>${L("See a patient", "Ver um doente")}</h2>
+        <p>${L("Take the history, examine, order tests and make the diagnosis. Asking and examining are free; fewer tests earn more points.", "Faça a anamnese, examine, peça exames e chegue ao diagnóstico. Perguntar e examinar não custa nada; menos exames dão mais pontos.")}</p>
+      </div>
+      <p class="muted ob-note">${L("One of either a day keeps your streak going.", "Um dos dois por dia mantém a sua sequência.")}</p>`;
+  } else {
+    const d = doctor();
+    const pick = (f) => { const look = Object.assign({}, d, { f, style: f ? "bob" : "receding", beard: "none", glasses: f || d.glasses !== "cat" ? d.glasses : "none" });
+      return `<button class="ob-pick ${d.f === f ? "on" : ""}" data-act="ob-sex" data-f="${f}" aria-pressed="${d.f === f}">${doctorFace(look, 96)}<b>${f ? L("Woman", "Médica") : L("Man", "Médico")}</b></button>`; };
+    body = `<h1>${L("Your doctor", d.f ? "A sua médica" : "O seu médico")}</h1>
+      <p class="ob-lead">${L("This is you in the app. Every case and right answer earns points to dress your doctor.", "É a sua imagem na aplicação. Cada caso e cada resposta certa dá pontos para " + (d.f ? "vestir a sua médica." : "vestir o seu médico."))}</p>
+      <div class="ob-row ob-picks">${pick(false)}${pick(true)}</div>
+      <div class="stack ob-group"><span class="eyebrow">${L("Skin tone", "Tom de pele")}</span>
+        <div class="ob-skins">${SKINS.map((c, i) => `<button class="ob-skin ${d.skin === i ? "on" : ""}" data-act="ob-skin" data-skin="${i}" style="background:${c}" aria-label="${L("Skin tone", "Tom de pele")} ${i + 1}" aria-pressed="${d.skin === i}"></button>`).join("")}</div></div>
+      <p class="muted ob-note">${L("Progress shows each area of medicine growing from Student to Professor. You can change all of this later.", "O Progresso mostra cada área da medicina a crescer de Estudante a Professor. Pode mudar tudo isto mais tarde.")}</p>`;
+  }
+  return `<main class="wrap ob" aria-label="${L("Welcome", "Boas-vindas")}">
+    <div class="ob-top">${dots}${skip}</div>
+    <div class="stack ob-body">${body}</div>
+    <div class="ob-foot">${back}${next}</div>
+  </main>`;
+}
+function onboardAct(t, act) {
+  if (act === "ob-next") { obStep = Math.min(2, obStep + 1); render(); window.scrollTo(0, 0); return true; }
+  if (act === "ob-back") { obStep = Math.max(0, obStep - 1); render(); window.scrollTo(0, 0); return true; }
+  if (act === "ob-sex") { const d = doctor(), f = t.dataset.f === "true"; if (f !== d.f) { d.f = f; d.style = f ? "bob" : "receding"; d.beard = "none"; if (!f && d.glasses === "cat") d.glasses = "none"; } save(); render(); return true; }
+  if (act === "ob-skin") { doctor().skin = +t.dataset.skin; save(); render(); return true; }
+  if (act === "ob-done") { S.onboarded = 1; obStep = 0; save(); go({ name: "home" }); return true; }
+  return false;
+}
+
 function render() {
   const fn = { home: renderHome, progress: renderProgress, waiting: renderWaiting, casebook: renderCasebook, case: renderCase, questions: renderQuestions, debrief: renderDebrief, warmup: renderWarmup, warmdone: renderWarmDone, avatar: renderAvatar }[view.name];
   const prevSheet = $app.querySelector(".sheet"), keep = prevSheet ? prevSheet.scrollTop : 0;
   const tab = { casebook: "casebook", progress: "progress" }[view.name] || "home";
-  $app.innerHTML = fn() + tabbar(tab) + zoomHTML() + settingsHTML() + signinHTML();
+  $app.innerHTML = onboardOn() ? onboardHTML() : fn() + tabbar(tab) + zoomHTML() + settingsHTML() + signinHTML();
   const nextSheet = $app.querySelector(".sheet"); if (nextSheet && prevSheet) nextSheet.scrollTop = keep;
   bind(); startPoses();
 }
@@ -7026,9 +7123,27 @@ function patientFace(c) {
     hat: o.hat || null, hatC: o.hatC || "#24324f", wrinkles: age >= 68, earrings: f && age >= 16 && (h % 3 === 0)
   };
 }
+/* Feature colours that keep eyes, brows, nose and mouth readable on every skin tone.
+   Light skins keep the original look; medium and dark skins get stronger lines,
+   a lighter lip line, softer blush and a hint of eye white. */
+function hexLum(h) {
+  if (!/^#[0-9a-f]{6}$/i.test(h || "")) return .5;
+  const c = [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4));
+  return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+}
+function featCol(skin) {
+  const ls = hexLum(skin);
+  // Brows: if the brow colour is too close to the skin, darken (or lighten) it so it still reads.
+  const brow = (b) => { const lb = hexLum(b); if (Math.abs(lb - ls) >= .07) return b; return ls < .12 ? "#120b08" : ls < .25 ? "#1f140e" : "#3a2a20"; };
+  if (ls >= .4) return { shade: "rgba(120,60,30,.28)", line: "rgba(120,60,30,.32)", nose: "rgba(120,60,30,.45)", lip: "#8a3b3b", lipW: 1.7, blushC: "#ff7a7a", blush: .19, browW: 1.7, sclera: null, mouthEdge: "", brow };
+  if (ls >= .25) return { shade: "rgba(90,40,15,.38)", line: "rgba(80,35,12,.45)", nose: "rgba(70,30,10,.6)", lip: "#7a2630", lipW: 1.9, blushC: "#ff7a7a", blush: .16, browW: 1.8, sclera: null, mouthEdge: "", brow };
+  // Dark skin: dark lines for the nose/ears, a lighter rose lip line, eye whites so the eyes stand out.
+  return { shade: "rgba(30,12,4,.4)", line: "rgba(30,12,4,.5)", nose: "rgba(25,10,4,.62)", lip: ls < .12 ? "#e0939a" : "#c96a74", lipW: 2, blushC: "#ff9a8a", blush: .1, browW: 2, sclera: "#f3ebe0", mouthEdge: ` stroke="${ls < .12 ? "#e0939a" : "#c96a74"}" stroke-width=".9"`, brow };
+}
+
 function faceSVG(s, size, extraClass) {
   const uid = "f" + (faceSVG.n = (faceSVG.n || 0) + 1);
-  const shade = "rgba(120,60,30,.28)", ink = "#2b2230";
+  const fc = featCol(s.skin), shade = fc.shade, ink = "#2b2230";
   const back = [], front = [];
   // Hair behind the head
   if (s.style === "long" && s.parts) back.push(`<path d="M29 52 C27 30 38 21 50 21 C62 21 73 30 71 52 L72.5 66 Q71 70 66 69 Q61 68 60 62 L40 62 Q39 68 34 69 Q29 70 27.5 66Z" fill="${s.hair}"/>`);
@@ -7069,12 +7184,12 @@ function faceSVG(s, size, extraClass) {
   const head = `<circle cx="33" cy="48" r="4" fill="${s.skin}"/><circle cx="67" cy="48" r="4" fill="${s.skin}"/>
     <rect x="44" y="58" width="12" height="15" rx="4" fill="${s.skin}"/><path d="M44 66 Q50 70 56 66 L56 61 L44 61Z" fill="${shade}" opacity=".5"/>
     <ellipse cx="50" cy="46" rx="17" ry="${s.child ? 18.5 : 20}" fill="${s.skin}" stroke="rgba(70,40,20,.28)" stroke-width=".7"/>`;
-  const browC = s.age >= 70 ? "#8f8a84" : s.hair;
-  let feat = `<circle cx="40.5" cy="53" r="3.2" fill="#ff7a7a" opacity=".18"/><circle cx="59.5" cy="53" r="3.2" fill="#ff7a7a" opacity=".18"/>
-    <g class="eyes"><circle cx="43.5" cy="47" r="1.9" fill="${ink}"/><circle cx="56.5" cy="47" r="1.9" fill="${ink}"/></g>
-    <path d="M40 42.6 Q43.5 41 47 42.4 M53 42.4 Q56.5 41 60 42.6" stroke="${browC}" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-    <path d="M50 48.5 Q48.4 52.6 50.6 53.4" stroke="${shade}" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-    <path d="M45 57.4 Q50 61 55 57.4" stroke="#8a3b3b" stroke-width="1.7" fill="none" stroke-linecap="round"/>`;
+  const browC = fc.brow(s.age >= 70 ? "#8f8a84" : s.hair);
+  let feat = `<circle cx="40.5" cy="53" r="3.2" fill="${fc.blushC}" opacity="${fc.blush}"/><circle cx="59.5" cy="53" r="3.2" fill="${fc.blushC}" opacity="${fc.blush}"/>
+    <g class="eyes">${fc.sclera ? `<ellipse cx="43.5" cy="47" rx="2.65" ry="2.5" fill="${fc.sclera}"/><ellipse cx="56.5" cy="47" rx="2.65" ry="2.5" fill="${fc.sclera}"/>` : ""}<circle cx="43.5" cy="47" r="1.9" fill="${ink}"/><circle cx="56.5" cy="47" r="1.9" fill="${ink}"/></g>
+    <path d="M40 42.6 Q43.5 41 47 42.4 M53 42.4 Q56.5 41 60 42.6" stroke="${browC}" stroke-width="${fc.browW}" fill="none" stroke-linecap="round"/>
+    <path d="M50 48.5 Q48.4 52.6 50.6 53.4" stroke="${fc.nose}" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M45 57.4 Q50 61 55 57.4" stroke="${fc.lip}" stroke-width="${fc.lipW}" fill="none" stroke-linecap="round"/>`;
   if (s.wrinkles) feat += `<path d="M37.4 46 l-2.2 -1 M37.4 48.4 l-2.2 1 M62.6 46 l2.2 -1 M62.6 48.4 l2.2 1 M44 35.5 Q50 34 56 35.5" stroke="${shade}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`;
   if (s.earrings) feat += `<circle cx="33" cy="53.5" r="1.6" fill="#e0b440"/><circle cx="67" cy="53.5" r="1.6" fill="#e0b440"/>`;
   if (s.beard === "beard") feat += `<path d="M34 50 C35 64 42 70.5 50 70.5 C58 70.5 65 64 66 50 C63 58 58 61.5 50 61.5 C42 61.5 37 58 34 50Z" fill="${s.hair}"/>`;
@@ -7252,30 +7367,30 @@ function doctorFull(d, tryOn, extraClass) {
   const parts = faceSVG({ parts: true, f: d.f, age: 66, skin, hair, style: d.style, hat: d.head === "none" ? null : d.head, hatC: "#3f8f6f", bg: "#fff", shirt: "#fff" });
   const hem = c.long;
   // Head, in the 100-unit face space, scaled up for the body
-  const brow = d.hair === "#e7e4df" || d.hair === "#9b958e" ? "#8f8a84" : d.hair === "#d8b465" ? "#b08a45" : hair;
+  const fc = featCol(skin), brow = fc.brow(d.hair === "#e7e4df" || d.hair === "#9b958e" ? "#8f8a84" : d.hair === "#d8b465" ? "#b08a45" : hair);
   const beard = d.beard === "beard" ? `<path d="M34 50 C35 64 42 70.5 50 70.5 C58 70.5 65 64 66 50 C63 58 58 61.5 50 61.5 C42 61.5 37 58 34 50Z" fill="${hair}"/>`
     : d.beard === "stubble" ? `<path d="M35 52 C36 63 42 68.5 50 68.5 C58 68.5 64 63 65 52 C62 59 58 62 50 62 C42 62 38 59 35 52Z" fill="${hair}" opacity=".3"/>` : "";
   const moustache = d.beard === "moustache" || d.beard === "beard" ? `<path d="M44 56.4 C46 53.8 49 54.3 50 55.4 C51 54.3 54 53.8 56 56.4 C53 57.4 51 56.9 50 56.4 C49 56.9 47 57.4 44 56.4Z" fill="${hair}"/>` : "";
   const glasses = d.extra === "halfmoon"
     ? `<path d="M38.4 48 h10.2 a5.1 4.2 0 0 1 -10.2 0Z M51.4 48 h10.2 a5.1 4.2 0 0 1 -10.2 0Z" fill="rgba(255,255,255,.3)" stroke="#c49a2c" stroke-width="1.3"/><path d="M48.6 48 L51.4 48" stroke="#c49a2c" stroke-width="1.3"/>`
     : glassesSVG(d.glasses, ink, 1.4);
-  const eye = (x, j) => `<g data-j="${j}" data-p="${x},47"><ellipse cx="0" cy="0" rx="1.95" ry="2.35" fill="${ink}"/><circle cx=".65" cy="-.85" r=".6" fill="#fff"/></g>`;
+  const eye = (x, j) => `<g data-j="${j}" data-p="${x},47">${fc.sclera ? `<ellipse cx="0" cy="0" rx="2.7" ry="2.85" fill="${fc.sclera}"/>` : ""}<ellipse cx="0" cy="0" rx="1.95" ry="2.35" fill="${ink}"/><circle cx=".65" cy="-.85" r=".6" fill="#fff"/></g>`;
   const head = `<g transform="translate(0,-27.6) scale(1.6)">
       ${parts.back}
-      <circle cx="33" cy="48" r="4.2" fill="${skin}" stroke="${DOC_LINE}" stroke-width=".5"/><path d="M33.6 46 q-1.6 2 0 4" stroke="rgba(120,60,30,.35)" stroke-width=".9" fill="none"/>
-      <circle cx="67" cy="48" r="4.2" fill="${skin}" stroke="${DOC_LINE}" stroke-width=".5"/><path d="M66.4 46 q1.6 2 0 4" stroke="rgba(120,60,30,.35)" stroke-width=".9" fill="none"/>
+      <circle cx="33" cy="48" r="4.2" fill="${skin}" stroke="${DOC_LINE}" stroke-width=".5"/><path d="M33.6 46 q-1.6 2 0 4" stroke="${fc.line}" stroke-width=".9" fill="none"/>
+      <circle cx="67" cy="48" r="4.2" fill="${skin}" stroke="${DOC_LINE}" stroke-width=".5"/><path d="M66.4 46 q1.6 2 0 4" stroke="${fc.line}" stroke-width=".9" fill="none"/>
       <ellipse cx="50" cy="46" rx="17" ry="20" fill="${skin}" stroke="${DOC_LINE}" stroke-width=".55"/>
       <path d="M34 50 C36 62 42 66 50 66 C58 66 64 62 66 50 C64 60 58 64 50 64 C42 64 36 60 34 50Z" fill="rgba(120,60,30,.08)"/>
-      <circle cx="40.2" cy="53.4" r="3.2" fill="#ff7a7a" opacity=".2"/><circle cx="59.8" cy="53.4" r="3.2" fill="#ff7a7a" opacity=".2"/>
+      <circle cx="40.2" cy="53.4" r="3.2" fill="${fc.blushC}" opacity="${fc.blush}"/><circle cx="59.8" cy="53.4" r="3.2" fill="${fc.blushC}" opacity="${fc.blush}"/>
       <g class="pupils">${eye(43.5, "eyeL")}${eye(56.5, "eyeR")}</g>
-      <g class="brows"><path d="M40 42.4 Q43.5 40.8 47 42.2 M53 42.2 Q56.5 40.8 60 42.4" stroke="${brow}" stroke-width="1.7" fill="none" stroke-linecap="round"/></g>
-      <path d="M37.6 46.2 l-2 -.9 M37.6 48.3 l-2 .9 M62.4 46.2 l2 -.9 M62.4 48.3 l2 .9" stroke="rgba(120,60,30,.3)" stroke-width=".8" stroke-linecap="round"/>
-      <path d="M50.2 48.4 Q48.3 52.4 50.6 53.3" stroke="rgba(120,60,30,.45)" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      <g class="brows"><path d="M40 42.4 Q43.5 40.8 47 42.2 M53 42.2 Q56.5 40.8 60 42.4" stroke="${brow}" stroke-width="${fc.browW}" fill="none" stroke-linecap="round"/></g>
+      <path d="M37.6 46.2 l-2 -.9 M37.6 48.3 l-2 .9 M62.4 46.2 l2 -.9 M62.4 48.3 l2 .9" stroke="${fc.line}" stroke-width=".8" stroke-linecap="round"/>
+      <path d="M50.2 48.4 Q48.3 52.4 50.6 53.3" stroke="${fc.nose}" stroke-width="1.4" fill="none" stroke-linecap="round"/>
       ${beard}
-      <g class="m m-smile"><path d="M45 57.2 Q50 61.2 55 57.2" stroke="#8a3b3b" stroke-width="1.7" fill="none" stroke-linecap="round"/></g>
-      <g class="m m-o"><ellipse cx="50.6" cy="58.4" rx="1.9" ry="2.2" fill="#7a3434"/></g>
-      <g class="m m-yawn"><ellipse cx="50.3" cy="59.6" rx="3.4" ry="5.2" fill="#7a3434"/><ellipse cx="50.3" cy="62.6" rx="2.2" ry="1.6" fill="#e88a8a"/></g>
-      <g class="m m-open"><path d="M44.6 56.6 Q50 57.8 55.4 56.6 Q54.6 63 50 63 Q45.4 63 44.6 56.6Z" fill="#7a3434"/><path d="M46.4 60.6 Q50 59.2 53.6 60.6 Q52.6 62.6 50 62.6 Q47.4 62.6 46.4 60.6Z" fill="#e88a8a"/></g>
+      <g class="m m-smile"><path d="M45 57.2 Q50 61.2 55 57.2" stroke="${fc.lip}" stroke-width="${fc.lipW}" fill="none" stroke-linecap="round"/></g>
+      <g class="m m-o"><ellipse cx="50.6" cy="58.4" rx="1.9" ry="2.2" fill="#7a3434"${fc.mouthEdge}/></g>
+      <g class="m m-yawn"><ellipse cx="50.3" cy="59.6" rx="3.4" ry="5.2" fill="#7a3434"${fc.mouthEdge}/><ellipse cx="50.3" cy="62.6" rx="2.2" ry="1.6" fill="#e88a8a"/></g>
+      <g class="m m-open"><path d="M44.6 56.6 Q50 57.8 55.4 56.6 Q54.6 63 50 63 Q45.4 63 44.6 56.6Z" fill="#7a3434"${fc.mouthEdge}/><path d="M46.4 60.6 Q50 59.2 53.6 60.6 Q52.6 62.6 50 62.6 Q47.4 62.6 46.4 60.6Z" fill="#e88a8a"/></g>
       ${moustache}${parts.hair}${glasses}${parts.hat}
     </g>`;
   // Body
@@ -8538,6 +8653,7 @@ $app.addEventListener("click", e => {
   const t = e.target.closest("[data-act]");
   if (!t) return;
   const act = t.dataset.act;
+  if (act.startsWith("ob-") && onboardAct(t, act)) return;
   if (act.startsWith("cl-") && cloudAct(act)) return;
   if (act === "closesheet" && e.target.closest("[data-stop]") && t.classList.contains("scrim")) return;
   switch (act) {
