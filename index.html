@@ -7034,7 +7034,7 @@ function onboardHTML() {
         <h2>${L("See a patient", "Ver um doente")}</h2>
         <p>${L("Take the history, examine, order tests and make the diagnosis. Asking and examining are free; fewer tests earn more points.", "Faça a anamnese, examine, peça exames e chegue ao diagnóstico. Perguntar e examinar não custa nada; menos exames dão mais pontos.")}</p>
       </div>
-      <p class="muted ob-note">${L("One of either a day keeps your streak going.", "Um dos dois por dia mantém a sua sequência.")}</p>`;
+      <p class="muted ob-note">${L("One of either a day keeps your streak going. Progress shows each area of medicine growing from Student to Professor.", "Um dos dois por dia mantém a sua sequência. O Progresso mostra cada área da medicina a crescer de Estudante a Professor.")}</p>`;
   } else {
     const d = doctor();
     const pick = (f) => { const look = d.f === f ? d : Object.assign({}, d, { f, style: f ? "bob" : "receding", beard: "none", glasses: f || d.glasses !== "cat" ? d.glasses : "none" });
@@ -7045,7 +7045,7 @@ function onboardHTML() {
       <div class="stack ob-group"><span class="eyebrow">${L("Skin tone", "Tom de pele")}</span>
         <div class="ob-skins">${SKINS.map((c, i) => `<button class="ob-skin ${d.skin === i ? "on" : ""}" data-act="ob-skin" data-skin="${i}" style="background:${c}" aria-label="${L("Skin tone", "Tom de pele")} ${i + 1}" aria-pressed="${d.skin === i}"></button>`).join("")}</div></div>
       ${obLooksHTML(d)}
-      <p class="muted ob-note">${L("Progress shows each area of medicine growing from Student to Professor. You can change your doctor any time with Edit your doctor.", "O Progresso mostra cada área da medicina a crescer de Estudante a Professor. Pode mudar o seu médico a qualquer momento em Editar o seu médico.")}</p>`;
+      <p class="muted ob-note">${L("You can change your doctor any time with Edit your doctor.", "Pode mudar o seu médico a qualquer momento em Editar o seu médico.")}</p>`;
   }
   return `<main class="wrap ob" aria-label="${L("Welcome", "Boas-vindas")}">
     <div class="ob-top">${dots}${skip}</div>
