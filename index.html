@@ -500,6 +500,12 @@ h1 { font-size: 27px; }
 .cl-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .cl-row .link { min-height: 44px; }
 .btn[disabled] { opacity: .6; }
+/* Account page */
+.acct-btn { position: relative; }
+.acct-dot { position: absolute; right: 2px; bottom: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--good); box-shadow: 0 0 0 2px var(--card); }
+.account .set-group h3 { margin: 0; }
+.nudge { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.nudge p { flex: 1 1 160px; }
 /* ---------- Onboarding (one-time) ---------- */
 .ob { min-height: 100dvh; display: flex; flex-direction: column; gap: 14px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 .ob-top { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
@@ -532,7 +538,7 @@ h1 { font-size: 27px; }
 .ob-skin { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, .12); position: relative; padding: 0; }
 .ob-skin::after { content: ""; position: absolute; inset: -4px; }
 .ob-skin.on { box-shadow: 0 0 0 3px var(--card), 0 0 0 5.5px var(--haem); }
-.ob-foot { display: flex; gap: 10px; position: sticky; bottom: calc(12px + env(safe-area-inset-bottom)); }
+.ob-foot { display: flex; gap: 10px; position: sticky; bottom: 0; margin: 0 -16px calc(-20px - env(safe-area-inset-bottom)); padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--bg); box-shadow: 0 -10px 14px -6px var(--bg); }
 .ob-foot .btn { flex: 1; }
 .ob-foot .btn-ghost { flex: 0 0 auto; min-width: 110px; color: var(--ink); background: var(--bg); }
 </style>
@@ -7031,20 +7037,29 @@ function onboardHTML() {
       <p class="muted ob-note">${L("One of either a day keeps your streak going.", "Um dos dois por dia mantém a sua sequência.")}</p>`;
   } else {
     const d = doctor();
-    const pick = (f) => { const look = Object.assign({}, d, { f, style: f ? "bob" : "receding", beard: "none", glasses: f || d.glasses !== "cat" ? d.glasses : "none" });
+    const pick = (f) => { const look = d.f === f ? d : Object.assign({}, d, { f, style: f ? "bob" : "receding", beard: "none", glasses: f || d.glasses !== "cat" ? d.glasses : "none" });
       return `<button class="ob-pick ${d.f === f ? "on" : ""}" data-act="ob-sex" data-f="${f}" aria-pressed="${d.f === f}">${doctorFace(look, 96)}<b>${f ? L("Woman", "Médica") : L("Man", "Médico")}</b></button>`; };
     body = `<h1>${L("Your doctor", d.f ? "A sua médica" : "O seu médico")}</h1>
       <p class="ob-lead">${L("This is you in the app. Every case and right answer earns points to dress your doctor.", "É a sua imagem na aplicação. Cada caso e cada resposta certa dá pontos para " + (d.f ? "vestir a sua médica." : "vestir o seu médico."))}</p>
       <div class="ob-row ob-picks">${pick(false)}${pick(true)}</div>
       <div class="stack ob-group"><span class="eyebrow">${L("Skin tone", "Tom de pele")}</span>
         <div class="ob-skins">${SKINS.map((c, i) => `<button class="ob-skin ${d.skin === i ? "on" : ""}" data-act="ob-skin" data-skin="${i}" style="background:${c}" aria-label="${L("Skin tone", "Tom de pele")} ${i + 1}" aria-pressed="${d.skin === i}"></button>`).join("")}</div></div>
-      <p class="muted ob-note">${L("Progress shows each area of medicine growing from Student to Professor. You can change all of this later.", "O Progresso mostra cada área da medicina a crescer de Estudante a Professor. Pode mudar tudo isto mais tarde.")}</p>`;
+      ${obLooksHTML(d)}
+      <p class="muted ob-note">${L("Progress shows each area of medicine growing from Student to Professor. You can change your doctor any time with Edit your doctor.", "O Progresso mostra cada área da medicina a crescer de Estudante a Professor. Pode mudar o seu médico a qualquer momento em Editar o seu médico.")}</p>`;
   }
   return `<main class="wrap ob" aria-label="${L("Welcome", "Boas-vindas")}">
     <div class="ob-top">${dots}${skip}</div>
     <div class="stack ob-body">${body}</div>
     <div class="ob-foot">${back}${next}</div>
   </main>`;
+}
+/* The rest of the look (same options as "Edit your doctor"): hair colour, hairstyle, glasses, beard. */
+function obLooksHTML(d) {
+  return LOOKS.filter(([key]) => key !== "f" && key !== "skin" && !(key === "beard" && d.f)).map(([key, en, pt, opts]) => {
+    const list = (opts || (d.f ? STYLES_F : STYLES_M)).filter(o => !o[3] || d.f);
+    return `<div class="stack ob-group"><span class="eyebrow">${L(en, pt)}</span><div class="chips">${list.map(([v, a, b]) =>
+      `<button class="chip ${String(d[key]) === String(v) ? "on" : ""}" data-act="look" data-key="${key}" data-val="${v}" aria-pressed="${String(d[key]) === String(v)}">${key === "hair" ? `<i class="sw" style="background:${v};margin-right:8px"></i>` : ""}${L(a, b)}</button>`).join("")}</div></div>`;
+  }).join("");
 }
 function onboardAct(t, act) {
   if (act === "ob-next") { obStep = Math.min(2, obStep + 1); render(); window.scrollTo(0, 0); return true; }
@@ -7056,7 +7071,7 @@ function onboardAct(t, act) {
 }
 
 function render() {
-  const fn = { home: renderHome, progress: renderProgress, waiting: renderWaiting, casebook: renderCasebook, case: renderCase, questions: renderQuestions, debrief: renderDebrief, warmup: renderWarmup, warmdone: renderWarmDone, avatar: renderAvatar }[view.name];
+  const fn = { home: renderHome, progress: renderProgress, waiting: renderWaiting, casebook: renderCasebook, case: renderCase, questions: renderQuestions, debrief: renderDebrief, warmup: renderWarmup, warmdone: renderWarmDone, avatar: renderAvatar, account: renderAccount }[view.name];
   const prevSheet = $app.querySelector(".sheet"), keep = prevSheet ? prevSheet.scrollTop : 0;
   const tab = { casebook: "casebook", progress: "progress" }[view.name] || "home";
   $app.innerHTML = onboardOn() ? onboardHTML() : fn() + tabbar(tab) + zoomHTML() + settingsHTML() + signinHTML();
@@ -7840,7 +7855,8 @@ function docCornerHTML() {
 }
 
 /* ---------- Settings: a cog on Today opens a small pop-up ---------- */
-function cogHTML() {
+function cogHTML() { return accountBtnHTML(); }
+function oldCogHTML() {
   return `<button class="cog" data-act="settings" aria-label="${L("Settings", "Definições")}"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>`;
 }
 // Small flags beside the language names
@@ -8075,7 +8091,7 @@ function signinHTML() {
   let body;
   if (v.step === "done") body = `<p class="cl-ok">✓ ${v.back ? L("Welcome back, ", "Olá de novo, ") : L("All set, ", "Pronto, ")}<b>${esc2(v.name)}</b>.</p>
       <p>${v.back ? L("Your progress is here. From now on it saves online by itself.", "O seu progresso está aqui. A partir de agora guarda-se online sozinho.") : L("Your progress now saves online by itself.", "O seu progresso passa a guardar-se online sozinho.")}</p>
-      <p class="muted small">${L("On another phone, open dailyclinic.space, tap the cog and sign in with the same name and PIN.", "Noutro telemóvel, abra dailyclinic.space, toque na roda dentada e entre com o mesmo nome e PIN.")}</p>
+      <p class="muted small">${L("On another phone, open dailyclinic.space, tap the person button at the top of Today and sign in with the same name and PIN.", "Noutro telemóvel, abra dailyclinic.space, toque no botão da pessoa no topo de Hoje e entre com o mesmo nome e PIN.")}</p>
       <button class="btn btn-primary" data-act="cl-close">${L("Done", "Feito")}</button>`;
   else if (v.step === "new") body = `<p>${L("There’s no one called ", "Ainda não existe ninguém chamado ")}<b>${esc2(v.name)}</b>${L(" yet.", ".")}</p>
       <p>${L("Create it with PIN ", "Criar com o PIN ")}<b class="cl-pinshow">${esc2(v.pin)}</b>${L("? Remember this PIN: you’ll need it on another phone.", "? Memorize este PIN: vai precisar dele noutro telemóvel.")}</p>
@@ -8128,6 +8144,42 @@ function cloudAct(act) {
     case "cl-out-yes": view.clOut = false; CL = null; clSynced = false; clKeep(); clState = "idle"; render(); return true;
   }
   return false;
+}
+
+/* ---------- Account page (replaces the settings pop-up) ----------
+   One place for everything about him and the app: online progress, language, light/dark,
+   the backup code and reset. Opened from the person button at the top right of Today. */
+function accountBtnHTML() {
+  const on = typeof cloudOn === "function" && cloudOn();
+  return `<button class="cog acct-btn" data-act="account" aria-label="${L("Account", "Conta")}"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 19.5c1.3-3.3 4-5 7.2-5s5.9 1.7 7.2 5"/></svg>${on ? `<i class="acct-dot" aria-hidden="true"></i>` : ""}</button>`;
+}
+function progressNudgeHTML() {
+  if (typeof cloudReady !== "function" || !cloudReady() || cloudOn()) return "";
+  return `<section class="card stack nudge"><p class="small">${L("Your progress is only on this phone.", "O seu progresso está só neste telemóvel.")}</p>
+      <button class="btn btn-soft" data-act="cl-open">${L("Save progress online", "Guardar o progresso online")}</button></section>`;
+}
+function renderAccount() {
+  const opt = (act, key, val, label, on) => `<button class="btn ${on ? "btn-primary" : "btn-soft"}" data-act="${act}" data-${key}="${val}">${label}</button>`;
+  const th = S.theme || "auto";
+  const cloud = typeof cloudSetHTML === "function" ? cloudSetHTML() : "";
+  return `<main class="wrap account">
+    <button class="link back" data-act="home">‹ ${L("Today", "Hoje")}</button>
+    <h1>${L("Account", "Conta")}</h1>
+    ${cloud ? `<section class="card stack">${cloud}</section>` : ""}
+    <section class="card stack"><h3>${L("Language", "Idioma")}</h3>
+      <div class="set-opts">${opt("lang", "lang", "en", "English" + FLAG_UK, S.lang !== "pt")}${opt("lang", "lang", "pt", "Português" + FLAG_PT, S.lang === "pt")}</div></section>
+    <section class="card stack"><h3>${L("Light or dark", "Claro ou escuro")}</h3>
+      <div class="set-opts">${[["auto", "Automatic", "Automático"], ["light", "Light", "Claro"], ["dark", "Dark", "Escuro"]].map(([v, a, b]) => opt("theme", "theme", v, L(a, b), th === v)).join("")}</div>
+      <p class="muted small">${L("Automatic follows the phone’s own setting.", "Automático segue a definição do telemóvel.")}</p></section>
+    <section class="card stack"><h3>${L("Backup code", "Código de cópia")}</h3>
+      <p class="muted small">${L("A copy of your progress you can paste into a note. Paste it back here to restore it.", "Uma cópia do progresso que pode colar numa nota. Cole-a aqui de novo para o repor.")}</p>
+      <button class="btn btn-soft" data-act="backup">${L("Copy my progress code", "Copiar o meu código de progresso")}</button><span id="backupmsg" class="small muted" style="overflow-wrap:anywhere"></span>
+      ${view.restore ? `<div class="flagbox"><label for="restoretext" class="small"><b>${L("Paste your progress code.", "Cole o seu código de progresso.")}</b> ${L("It replaces what is on this phone now.", "Substitui o que está agora neste telemóvel.")}</label><textarea id="restoretext"></textarea><div class="row"><button class="btn btn-primary" data-act="restore-yes">${L("Restore", "Repor")}</button><button class="link" data-act="restore-no">${L("Cancel", "Cancelar")}</button></div><span id="restoremsg" class="small muted"></span></div>` : `<button class="link" data-act="restore" style="align-self:center">${L("Restore from a code", "Repor a partir de um código")}</button>`}
+    </section>
+    <section class="stack reset-zone">
+      ${view.confirmReset ? `<div class="flagbox stack"><b>${(cloudOn() ? L("Erase all progress, on this phone and online?", "Apagar todo o progresso, neste telemóvel e online?") : L("Erase all progress on this phone?", "Apagar todo o progresso deste telemóvel?"))}</b><span class="small muted">${L("Streaks, cases, levels and points all go back to zero. This can't be undone.", "Séries, casos, níveis e pontos voltam todos a zero. Não é possível anular.")}</span><div class="row"><button class="btn btn-primary" data-act="reset-yes">${L("Erase", "Apagar")}</button><button class="btn btn-soft" data-act="reset-no">${L("Keep it", "Manter")}</button></div></div>` : `<button class="link" data-act="reset">${L("Reset progress", "Apagar o progresso")}</button>`}
+    </section>
+  </main>`;
 }
 
 /* ---------- Home ---------- */
@@ -8604,16 +8656,9 @@ function renderProgress() {
       <div class="stat"><b>${casesDone.length}</b><span>${L("cases worked", "casos estudados")}</span></div>
     </div>
     <section class="card stack"><h3>${L("By area", "Por área")}</h3>${areas}</section>
-    <section class="card stack"><h3>${L("Keep your progress safe", "Guarde o seu progresso")}</h3>
-      ${cloudProgressHTML(`<p class="muted small">${L("Progress lives only on this phone. Copy the code now and then, and keep it in a note.", "O progresso fica só neste telemóvel. Copie o código de vez em quando e guarde-o numa nota.")}</p>`)}
-      <button class="btn ${cloudReady() ? "btn-ghost" : "btn-soft"}" data-act="backup">${L("Copy my progress code", "Copiar o meu código de progresso")}</button><span id="backupmsg" class="small muted" style="overflow-wrap:anywhere"></span>
-      ${view.restore ? `<div class="flagbox"><label for="restoretext" class="small"><b>${L("Paste your progress code.", "Cole o seu código de progresso.")}</b> ${L("It replaces what is on this phone now.", "Substitui o que está agora neste telemóvel.")}</label><textarea id="restoretext"></textarea><div class="row"><button class="btn btn-primary" data-act="restore-yes">${L("Restore", "Repor")}</button><button class="link" data-act="restore-no">${L("Cancel", "Cancelar")}</button></div><span id="restoremsg" class="small muted"></span></div>` : `<button class="link" data-act="restore" style="align-self:center">${L("Restore from a code", "Repor a partir de um código")}</button>`}
-    </section>
+    ${progressNudgeHTML()}
     ${flags}
     ${weakHTML()}
-    <section class="stack reset-zone">
-      ${view.confirmReset ? `<div class="flagbox stack"><b>${(cloudOn() ? L("Erase all progress, on this phone and online?", "Apagar todo o progresso, neste telemóvel e online?") : L("Erase all progress on this phone?", "Apagar todo o progresso deste telemóvel?"))}</b><span class="small muted">${L("Streaks, cases, levels and points all go back to zero. This can't be undone.", "Séries, casos, níveis e pontos voltam todos a zero. Não é possível anular.")}</span><div class="row"><button class="btn btn-primary" data-act="reset-yes">${L("Erase", "Apagar")}</button><button class="btn btn-soft" data-act="reset-no">${L("Keep it", "Manter")}</button></div></div>` : `<button class="link" data-act="reset">${L("Reset progress", "Apagar o progresso")}</button>`}
-    </section>
   </main>`;
 }
 
@@ -8660,6 +8705,7 @@ $app.addEventListener("click", e => {
     case "tab": go({ name: t.dataset.to }); break;
     case "home": go({ name: "home" }); break;
     case "avatar": go({ name: "avatar" }); break;
+    case "account": go({ name: "account" }); break;
     case "docwave": docSetPose("wave"); break;
     case "settings": view.settings = true; render(); break;
     case "setclose": view.settings = false; render(); break;
@@ -8727,7 +8773,7 @@ $app.addEventListener("click", e => {
     case "restore": view.restore = true; render(); break;
     case "reset": view.confirmReset = true; render(); break;
     case "reset-no": view.confirmReset = false; render(); break;
-    case "reset-yes": { const keep = { lang: S.lang, theme: S.theme, docName: S.docName }; S = Object.assign(blank(), keep); save(); view.confirmReset = false; go({ name: "progress" }); break; }
+    case "reset-yes": { const keep = { lang: S.lang, theme: S.theme, docName: S.docName, onboarded: S.onboarded }; S = Object.assign(blank(), keep); save(); view.confirmReset = false; go({ name: "account" }); break; }
     case "lang": S.lang = t.dataset.lang; save(); applyLang(); document.documentElement.lang = S.lang === "pt" ? "pt-PT" : "en"; render(); break;
     case "restore-no": view.restore = false; render(); break;
     case "restore-yes": {
