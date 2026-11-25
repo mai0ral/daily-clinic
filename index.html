@@ -7097,7 +7097,7 @@ const SKINS = ["#f3d3b5", "#eac2a0", "#ddab83", "#c99467", "#9a6a47", "#6e4529"]
 const FACE_BGS = ["#ffd8c2", "#cfe6ff", "#d6f0cc", "#ffe7a6", "#e6dbff", "#ffd3e2", "#c8efe8", "#f7dcc6"];
 const SHIRTS = ["#3d6fb6", "#c2563f", "#2f8a6a", "#7b4fa8", "#d08a2e", "#4b5563", "#b84a7a", "#2b7a9e", "#8a6d3b"];
 function hairColour(age, h) {
-  if (age < 45) return pickH(["#2a1c14", "#3b2618", "#5a3a22", "#1d1a19", "#6e4a2c"], h, 3);
+  if (age < 45) return pickH(["#2a1c14", "#3b2618", "#5a3a22", "#1d1a19", "#5c3018"], h, 3);
   if (age < 60) return pickH(["#5b524b", "#4a4039", "#6d625a"], h, 3);
   if (age < 75) return pickH(["#9b958e", "#aaa49c", "#8d8780"], h, 3);
   return pickH(["#d9d5cf", "#e7e4df", "#cfcac3"], h, 3);
@@ -7270,7 +7270,7 @@ function glassesSVG(kind, ink, w, fill) {
   return "";
 }
 const STYLE_OK_F = ["bob", "long", "bun", "curlyF"], STYLE_OK_M = ["short", "side", "receding", "bald", "curly"];
-function doctor() { S.doc = S.doc || {}; for (const k in DOC_DEFAULT) if (!(k in S.doc)) S.doc[k] = DOC_DEFAULT[k]; S.owned = S.owned || SHOP.filter(i => !i.price).map(i => i.slot + ":" + i.id);
+function doctor() { S.doc = S.doc || {}; if (S.doc.hair === "#6e4a2c") S.doc.hair = "#5c3018"; for (const k in DOC_DEFAULT) if (!(k in S.doc)) S.doc[k] = DOC_DEFAULT[k]; S.owned = S.owned || SHOP.filter(i => !i.price).map(i => i.slot + ":" + i.id);
   const d = S.doc; if (!(d.f ? STYLE_OK_F : STYLE_OK_M).includes(d.style)) d.style = d.f ? "bob" : "receding";
   if (!d.f && d.glasses === "cat") d.glasses = "square";
   return S.doc; }
@@ -7296,7 +7296,7 @@ function doctorSpec(d, bg, grad, labArt, douroArt, coatC, shirt) {
 const LOOKS = [
   ["f", "Doctor", "Médico", [[false, "Man", "Homem"], [true, "Woman", "Mulher"]]],
   ["skin", "Skin", "Pele", SKINS.map((c, i) => [i, `<i class="sw" style="background:${c}"></i>`, `<i class="sw" style="background:${c}"></i>`])],
-  ["hair", "Hair colour", "Cor do cabelo", [["#2a1c14", "Dark", "Escuro"], ["#6e4a2c", "Brown", "Castanho"], ["#d8b465", "Blonde", "Louro"], ["#5b524b", "Salt and pepper", "Grisalho"], ["#9b958e", "Grey", "Cinzento"], ["#e7e4df", "White", "Branco"]]],
+  ["hair", "Hair colour", "Cor do cabelo", [["#2a1c14", "Dark", "Escuro"], ["#5c3018", "Brown", "Castanho"], ["#d8b465", "Blonde", "Louro"], ["#5b524b", "Salt and pepper", "Grisalho"], ["#9b958e", "Grey", "Cinzento"], ["#e7e4df", "White", "Branco"]]],
   ["style", "Hairstyle", "Penteado", null],
   ["glasses", "Glasses", "Óculos", [["none", "None", "Sem"], ["round", "Round", "Redondos"], ["square", "Square", "Quadrados"], ["cat", "Cat-eye", "Gatinho", true]]],
   ["beard", "Beard", "Barba", [["none", "None", "Sem"], ["moustache", "Moustache", "Bigode"], ["beard", "Full beard", "Barba"], ["stubble", "Stubble", "Barba por fazer"]]]
