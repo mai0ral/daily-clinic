@@ -7146,14 +7146,20 @@ function hexLum(h) {
   const c = [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4));
   return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
 }
+/* A deeper, muted shade of the skin itself (lips), with a slight warm shift. */
+function skinShade(h, k) {
+  if (!/^#[0-9a-f]{6}$/i.test(h || "")) return "#7a4030";
+  const c = [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)), w = [1.06, .94, .9];
+  return "#" + c.map((v, i) => Math.max(0, Math.min(255, Math.round(v * k * w[i]))).toString(16).padStart(2, "0")).join("");
+}
 function featCol(skin) {
   const ls = hexLum(skin);
   // Brows: if the brow colour is too close to the skin, darken (or lighten) it so it still reads.
   const brow = (b) => { const lb = hexLum(b); if (Math.abs(lb - ls) >= .07) return b; return ls < .12 ? "#120b08" : ls < .25 ? "#1f140e" : "#3a2a20"; };
-  if (ls >= .4) return { shade: "rgba(120,60,30,.28)", line: "rgba(120,60,30,.32)", nose: "rgba(120,60,30,.45)", lip: "#8a3b3b", lipW: 1.7, blushC: "#ff7a7a", blush: .19, browW: 1.7, sclera: null, mouthEdge: "", brow };
-  if (ls >= .25) return { shade: "rgba(90,40,15,.38)", line: "rgba(80,35,12,.45)", nose: "rgba(70,30,10,.6)", lip: "#7a2630", lipW: 1.9, blushC: "#ff7a7a", blush: .16, browW: 1.8, sclera: null, mouthEdge: "", brow };
-  // Dark skin: dark lines for the nose/ears, a lighter rose lip line, eye whites so the eyes stand out.
-  return { shade: "rgba(30,12,4,.4)", line: "rgba(30,12,4,.5)", nose: "rgba(25,10,4,.62)", lip: ls < .12 ? "#e0939a" : "#c96a74", lipW: 2, blushC: "#ff9a8a", blush: .1, browW: 2, sclera: "#f3ebe0", mouthEdge: ` stroke="${ls < .12 ? "#e0939a" : "#c96a74"}" stroke-width=".9"`, brow };
+  if (ls >= .4) return { shade: "rgba(120,60,30,.28)", line: "rgba(120,60,30,.32)", nose: "rgba(120,60,30,.45)", lip: skinShade(skin, .58), lipW: 1.7, blushC: "#ff7a7a", blush: .19, browW: 1.7, sclera: null, mouthEdge: "", brow };
+  if (ls >= .25) return { shade: "rgba(90,40,15,.38)", line: "rgba(80,35,12,.45)", nose: "rgba(70,30,10,.6)", lip: skinShade(skin, .5), lipW: 1.8, blushC: "#ff7a7a", blush: .16, browW: 1.8, sclera: null, mouthEdge: "", brow };
+  // Dark skin: dark lines for the nose/ears, lips a deeper shade of the same skin, eye whites so the eyes stand out.
+  return { shade: "rgba(30,12,4,.4)", line: "rgba(30,12,4,.5)", nose: "rgba(25,10,4,.62)", lip: skinShade(skin, ls < .12 ? .45 : .5), lipW: 2, blushC: skinShade(skin, .7), blush: .35, browW: 2, sclera: "#f3ebe0", mouthEdge: "", brow };
 }
 
 function faceSVG(s, size, extraClass) {
