@@ -541,6 +541,93 @@ h1 { font-size: 27px; }
 .ob-foot { display: flex; gap: 10px; position: sticky; bottom: 0; margin: 0 -16px calc(-20px - env(safe-area-inset-bottom)); padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--bg); box-shadow: 0 -10px 14px -6px var(--bg); }
 .ob-foot .btn { flex: 1; }
 .ob-foot .btn-ghost { flex: 0 0 auto; min-width: 110px; color: var(--ink); background: var(--bg); }
+/* ---------- Tidy-up pass (2026-11-26): one type scale, one colour set, one spacing system ----------
+   Type scale (7 sizes): 14 label · 16 secondary · 18 body · 20 card title · 24 section title · 28 page title · 34 big number
+   Radii: 16 cards · 12 controls · 8 small chips · pill
+   Card padding 14/16, control padding 12/14, page gap 12 */
+:root { --t-label: 14px; --t-small: 16px; --t-body: 18px; --t-card: 20px; --t-section: 24px; --t-page: 28px; --t-num: 34px;
+  --r-card: 16px; --r-ctl: 12px; --r-sm: 8px; }
+
+/* Colour: one amber (warnings and "See a patient" were two near-identical ambers); workup icons keep their own colours (Dee) */
+:root { --warn: var(--clinic); --warn-soft: var(--clinic-soft); }
+.ob-quick { color: var(--card); }
+.ob-quick .eyebrow { color: var(--card); opacity: .8; }
+
+/* Headings: page, section, card */
+h1, .patient h1 { font-size: var(--t-page); }
+.patient h1 { font-size: var(--t-section); }
+h2, .ob-card h2, .choice-card .title { font-size: var(--t-section); }
+h3, .card h2 { font-weight: 700; }
+h3, .card h2, .set-top h2 { font-size: var(--t-card); }
+.shop-slot h3 { font-size: var(--t-small); }
+.case-tile .who, .entry .who, .unlocked-banner b { font-size: var(--t-card); }
+
+/* Body */
+.note .a, .answer-input, .mnemonic, .name-input { font-size: var(--t-body); }
+.entry .complaint, .story { font-size: var(--t-body); }
+
+/* Secondary text */
+.small, .why-streak, .case-tile .meta, .entry .story, .stack small, .card small, .note .a.result, .report, .ob-note,
+.hint, .area b, .ob-pick, .vital span, .choice-card .meta, .patient .line, .streak-card p, .path ol, .weak-btn, .flagbox textarea, .tabbar button, .link, .ob-skip, .zoom-bar button, .btn-sm, .chip { font-size: var(--t-small) !important; }
+
+/* Labels */
+.eyebrow, .streak span, .wday, .seg-label, .unlock-meter, .wday.pass i, .badge, .vital small, .note .q, .flag, .opt .tick,
+.tag, .bar .level, .stat span, .day, .proto, .weak-btn small, .figure figcaption, .credit, .kind-tag, .readnote,
+.doc-btn .pts, .case-tile .state, .area small, .streak-top small { font-size: var(--t-label) !important; }
+
+/* Numbers */
+.streak-top b, .score b { font-size: var(--t-num); }
+.stat b, .streak b, .pts-line b, .doc-corner .wallet b, .cl-pin { font-size: var(--t-section); }
+.wallet b { font-size: var(--t-page); }
+
+/* Radii */
+.card, .entry, .case-tile, .area, .streak-card, .choice-card, .unlocked-banner, .ob-card, .ob-pick, .stat { border-radius: var(--r-card); }
+.btn, .choice, .opt, .why, .answer-input, .name-input, .weak-btn, .hint, .verdict, .flagbox, .figure button, .opt .thumb, .area .ico, .btn-sm, .shop-item.trying { border-radius: var(--r-ctl); }
+.vital, .day, .flagbox textarea, .tag, .badge { border-radius: var(--r-sm); }
+
+/* Spacing */
+.wrap { gap: 12px; }
+.card, .entry, .case-tile, .streak-card, .unlocked-banner, .ob-card, .why { padding: 14px 16px; }
+.choice-card { padding: 14px 16px; }
+.choice, .opt, .choices + .stack, .weak-btn, .hint, .verdict { padding: 12px 14px; }
+.area { padding: 12px; }
+.streak-card { gap: 8px; }
+.entry { gap: 4px; }
+
+/* Narrow phones keep the same scale, one step down for the two biggest headings only */
+@media (max-width: 400px) {
+  h1 { font-size: var(--t-section); } .patient h1 { font-size: 22px; } h2, .choice-card .title { font-size: 22px; }
+  .story, .entry .complaint { font-size: var(--t-body); }
+}
+
+/* The case screen stays exactly as before (Dee, 2026-11-26: preferred the old spacing there) */
+.wrap:has(.areas) { gap: 13px; }
+.wrap:has(.areas) .card { padding: 15px; border-radius: 16px; }
+.wrap:has(.areas) .patient h1 { font-size: 25px; }
+.wrap:has(.areas) .patient .line { font-size: 16px !important; }
+.wrap:has(.areas) .small, .wrap:has(.areas) .stack small, .wrap:has(.areas) .card small { font-size: 15px !important; }
+.wrap:has(.areas) h2 { font-size: 23px; }
+.wrap:has(.areas) .area { padding: 11px 12px; border-radius: 16px; }
+.wrap:has(.areas) .area b { font-size: 17px !important; }
+.wrap:has(.areas) .area small { font-size: 15px !important; }
+.wrap:has(.areas) .area .ico { border-radius: 10px; }
+.wrap:has(.areas) .vital { border-radius: 10px; }
+.wrap:has(.areas) .vital span { font-size: 17px !important; }
+.wrap:has(.areas) .vital small { font-size: 15px !important; }
+.wrap:has(.areas) .note .a { font-size: 17px; }
+.wrap:has(.areas) .note .a.result { font-size: 15px !important; }
+.wrap:has(.areas) .note .q { font-size: 14px !important; }
+.wrap:has(.areas) .flag { font-size: 15px !important; }
+.wrap:has(.areas) .link { font-size: 16px !important; }
+.sheet .opt { border-radius: 14px; }
+.sheet .note .a { font-size: 17px; }
+.sheet .note .a.result { font-size: 15px !important; }
+.sheet .small, .sheet .stack small { font-size: 15px !important; }
+.sheet .flag { font-size: 15px !important; }
+.sheet h2 { font-size: 23px; }
+.actionbar .btn { border-radius: 14px; }
+.sheet .btn-sm { font-size: 15px !important; }
+.sheet .btn { border-radius: 14px; }
 </style>
 
 <div id="app"></div>
