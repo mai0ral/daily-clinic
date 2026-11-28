@@ -9231,7 +9231,7 @@ function xbHair(s) {
   if (st === "long" && s.parts && !hatHides) { /* the whole long hair is drawn as one piece behind the shoulders */ }
   else if (st === "long") back.push(s.parts ? `<path d="M30 50 C28 29 38 20 50 20 C62 20 72 29 70 50 L72 67 Q72 71 67 71 L33 71 Q28 71 28 67Z" fill="${h}"/>`
     : `<path d="M30 50 C28 29 38 20 50 20 C62 20 72 29 70 50 L74 92 L26 92Z" fill="${h}"/>`);
-  if (st === "bob") back.push(`<path d="M29.5 48 C28 28 38 20 50 20 C62 20 72 28 70.5 48 L71.5 59.5 Q71.5 63 68 63 L32 63 Q28.5 63 28.5 59.5Z" fill="${hS}"/>`);
+  if (st === "bob") back.push(`<path d="M29.5 48 C28 28 38 20 50 20 C62 20 72 28 70.5 48 L71.5 59.5 Q71.5 63 68 63 L32 63 Q28.5 63 28.5 59.5Z" fill="${h}"/>`); /* one colour, like long hair (Dee 2026-11-28) */
   if (st === "bun") back.push(`<circle cx="50" cy="19.5" r="8.6" fill="${h}"/><path d="M43 21 Q50 25 57 21" stroke="${hS}" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="47" cy="16.5" r="2" fill="${hL}" opacity=".7"/>`);
   const ponyTail = `<path d="M61 31.4 C77.6 33.6 82.4 52 76.4 69.4 Q74.6 74.6 71.2 76.4 C72.6 68 71.4 59.6 68.6 52 C66.6 46.4 63.6 42.4 59.6 39.6Z" fill="${h}"/><path d="M66.4 42.6 C70.8 48.6 72.6 57 72 66" stroke="${hS}" stroke-width=".9" fill="none" stroke-linecap="round" opacity=".7"/><ellipse cx="63.4" cy="34.6" rx="2.6" ry="3.4" transform="rotate(-35 63.4 34.6)" fill="${hS}"/>`;
   if (st === "pony" && !s.parts) back.push(ponyTail);
